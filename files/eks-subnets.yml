@@ -1,0 +1,142 @@
+---
+AWSTemplateFormatVersion: '2010-09-09'
+Description: Subnets for an EKS cluster.
+
+Parameters:
+
+  Region:
+    Type: String
+    Description: AWS Region for the VPC.
+
+  VpcId: 
+    Type: String
+    Description: The VPC where the subnets will be created.
+
+  PrivateSubnetRouteTableId:
+    Type: String
+    Description: The ID of the route table to attach to the private subnets.
+  
+  PublicSubnetRouteTableId:
+    Type: String
+    Description: The ID of the route table to attach to the public subnets.
+
+Resources:
+  Subnet1a:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref VpcId
+      AvailabilityZone:
+        Fn::Sub: '${Region}a'
+      CidrBlock: 172.20.50.0/24
+      Tags:
+        - Key: Name
+          Value: testing-eks-a
+        - Key: kubernetes.io/role/internal-elb
+          Value: '1'
+
+  Subnet1aRouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref Subnet1a
+      RouteTableId: !Ref PrivateSubnetRouteTableId
+
+  Subnet1b:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref VpcId
+      AvailabilityZone:
+        Fn::Sub: '${Region}b'
+      CidrBlock: 172.20.150.0/24
+      Tags:
+        - Key: Name
+          Value: testing-eks-b
+        - Key: kubernetes.io/role/internalelb
+          Value: '1'
+
+  Subnet1bRouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref Subnet1b
+      RouteTableId: !Ref PrivateSubnetRouteTableId
+
+  Subnet1c:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref VpcId
+      AvailabilityZone:
+        Fn::Sub: '${Region}c'
+      CidrBlock: 172.20.250.0/24
+      Tags:
+        - Key: Name
+          Value: testing-eks-c
+        - Key: kubernetes.io/role/internal-elb
+          Value: '1'
+
+  Subnet1cRouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref Subnet1c
+      RouteTableId: !Ref PrivateSubnetRouteTableId
+
+  PublicSubnet1a:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref VpcId
+      AvailabilityZone:
+        Fn::Sub: '${Region}a'
+      CidrBlock: 172.20.51.0/24
+      Tags:
+        - Key: Name
+          Value: public-testing-eks-a
+        - Key: kubernetes.io/role/elb
+          Value: '1'
+        - Key: kubernetes.io/cluster/testing-eks-cluster
+          Value: shared
+
+  PublicSubnet2aRouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref PublicSubnet1a
+      RouteTableId: !Ref PublicSubnetRouteTableId
+
+  PublicSubnet1b:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref VpcId
+      AvailabilityZone:
+        Fn::Sub: '${Region}b'
+      CidrBlock: 172.20.151.0/24
+      Tags:
+        - Key: Name
+          Value: public-testing-eks-b
+        - Key: kubernetes.io/role/elb
+          Value: '1'
+        - Key: kubernetes.io/cluster/testing-eks-cluster
+          Value: shared
+
+  PublicSubnet2bRouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref PublicSubnet1b
+      RouteTableId: !Ref PublicSubnetRouteTableId
+
+  PublicSubnet1c:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref VpcId
+      AvailabilityZone:
+        Fn::Sub: '${Region}c'
+      CidrBlock: 172.20.251.0/24
+      Tags:
+        - Key: Name
+          Value: public-testing-eks-c
+        - Key: kubernetes.io/role/elb
+          Value: '1'
+        - Key: kubernetes.io/cluster/testing-eks-cluster
+          Value: shared
+
+  PublicSubnet2cRouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref PublicSubnet1c
+      RouteTableId: !Ref PublicSubnetRouteTableId

@@ -1,0 +1,64 @@
+---
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'EKS Cluster definition.'
+
+Parameters:
+
+  VpcId:
+    Type: String
+    Description: VPC ID.
+
+  ClusterSubnets:
+    Type: CommaDelimitedList
+    Description: List of subnets in the VPC.
+
+  ClusterName:
+    Type: String
+    Description: EKS Kubernetes cluster name.
+
+  ClusterKubernetesVersion:
+    Type: String
+    Description: EKS Kubernetes cluster version.
+
+Resources:
+
+  ClusterRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: 
+        Fn::Sub: '${ClusterName}-role'
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          Effect: Allow
+          Principal:
+            Service:
+              - eks.amazonaws.com
+          Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AmazonEKSClusterPolicy
+        - arn:aws:iam::aws:policy/AmazonEKSServicePolicy
+
+  ClusterControlPlaneSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupName: 
+        Fn::Sub: '${ClusterName}-sg'
+      GroupDescription: Cluster communication with worker nodes.
+      VpcId: !Ref VpcId
+      Tags: 
+        - Key: Name
+          Value: 
+            Fn::Sub: '${ClusterName}-sg'
+
+  Cluster:
+    Type: "AWS::EKS::Cluster"
+    Properties:
+      Name: !Ref ClusterName
+      Version: !Ref ClusterKubernetesVersion
+      RoleArn: !GetAtt ClusterRole.Arn
+      ResourcesVpcConfig:
+        SecurityGroupIds:
+          - !Ref ClusterControlPlaneSecurityGroup
+        SubnetIds: !Ref ClusterSubnets
+

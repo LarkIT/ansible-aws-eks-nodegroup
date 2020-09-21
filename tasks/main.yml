@@ -1,0 +1,26 @@
+---
+# main/tasks.yml
+# tasks file for ansible-aws-eks-nodegroup
+- name: Lookup subnet info
+  ec2_vpc_subnet_info:
+      filters:
+        "tag:Name": "{{ item }}"
+  loop: "{{ eks_cluster_subnet_names }}"
+  register: subnet_info
+- name: Create or update EKS node group via CloudFormation
+  cloudformation:
+    stack_name: "{{ eks_nodegroup_cloudformation_stack_name }}"
+    state: present
+    region: "{{ aws_region }}"
+    disable_rollback: false
+    template: "{{ eks_nodegroup_cloudformation_template_file }}"
+    template_parameters:
+      ClusterName: "{{ eks_cluster_name }}"
+      NodeGroupName: "{{ eks_nodegroup_name }}"
+      NodeGroupRoleArn: "{{ eks_nodegroup_role_arn }}"
+      NodeGroupDesiredCapacity: "{{ eks_nodegroup_cluster_size }}"
+      NodeInstanceType: "{{ eks_nodegroup_instance_type }}"
+      NodeSubnets: "{{ subnet_info|json_query('results[0].subnets[0].subnet_id') }},
+                    {{ subnet_info|json_query('results[1].subnets[0].subnet_id') }},
+                    {{ subnet_info|json_query('results[2].subnets[0].subnet_id') }}"
+    tags: "{{ eks_cluster_resource_tags }}"
