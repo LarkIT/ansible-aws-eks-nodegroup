@@ -1,12 +1,14 @@
 ---
 # main/tasks.yml
 # tasks file for ansible-aws-eks-nodegroup
+
 - name: Lookup subnet info
   ec2_vpc_subnet_info:
       filters:
         "tag:Name": "{{ item }}"
   loop: "{{ eks_cluster_subnet_names }}"
   register: subnet_info
+
 - name: Create or update EKS node group via CloudFormation
   cloudformation:
     stack_name: "{{ eks_nodegroup_cloudformation_stack_name }}"
@@ -24,3 +26,23 @@
                     {{ subnet_info|json_query('results[1].subnets[0].subnet_id') }},
                     {{ subnet_info|json_query('results[2].subnets[0].subnet_id') }}"
     tags: "{{ eks_cluster_resource_tags }}"
+
+- name: Lookup EC2 info
+  ec2_instance_info:
+    filters:
+      "tag:eks:nodegroup-name": "{{ eks_nodegroup_name }}"
+  register: ec2_info
+
+
+- name: Attach worker node security groups
+  ec2_eni:
+    eni_id: "{{ item|json_query(interface_query)|join }}"
+    security_groups:  "{{ item.security_groups|json_query('[*].group_name') }} + {{ eks_nodegroup_additional_sgs }}"
+  when: eks_nodegroup_additional_sgs|join not in item.security_groups|json_query('[*].group_name')
+  vars: 
+    interface_query: "network_interfaces[?description==''].network_interface_id"
+  loop: "{{ ec2_info|json_query('instances[*]') }}"
+
+
+
+    
