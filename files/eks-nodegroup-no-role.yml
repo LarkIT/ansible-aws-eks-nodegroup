@@ -8,13 +8,17 @@ Parameters:
     Type: String
     Description: The EKS cluster name.
 
+  EBSKeyName:
+    Type: String
+    Description: The KMS key to encrypt the node group worker EBS root volume
+
   NodeGroupName:
     Type: String
     Description: Unique identifier for the Node Group.
 
-  NodeGroupRoleArn: 
+  NodeGroupRoleArn:
     Type: String
-    Description: The ARN of the role for the nodegroup instances to assume. 
+    Description: The ARN of the role for the nodegroup instances to assume.
 
   NodeInstanceType:
     Type: String
@@ -29,14 +33,26 @@ Parameters:
     Description: The subnets where workers can be created.
 
 Resources:
+  LT:
+    Type: AWS::EC2::LaunchTemplate
+    Properties:
+      LaunchTemplateData:
+        BlockDeviceMappings:
+        -
+          DeviceName: /dev/xvda
+          Ebs:
+            DeleteOnTermination: true
+            Encrypted: true
+            KmsKeyId: !Ref EBSKeyName
+            VolumeType: gp2
+        InstanceType: !Ref NodeInstanceType
   NodeGroup:
     Type: 'AWS::EKS::Nodegroup'
     Properties:
       NodegroupName: !Ref NodeGroupName
       ClusterName: !Ref ClusterName
       NodeRole: !Ref NodeGroupRoleArn
-      InstanceTypes:
-        - !Ref NodeInstanceType
+      LaunchTemplate: ${LT}
       ScalingConfig:
         MinSize: 2
         DesiredSize: !Ref NodeGroupDesiredCapacity

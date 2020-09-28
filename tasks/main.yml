@@ -18,6 +18,7 @@
     template: "{{ eks_nodegroup_cloudformation_template_file }}"
     template_parameters:
       ClusterName: "{{ eks_cluster_name }}"
+      EBSKeyName: "{{ ebs_kms_key_name }}"
       NodeGroupName: "{{ eks_nodegroup_name }}"
       NodeGroupRoleArn: "{{ eks_nodegroup_role_arn }}"
       NodeGroupDesiredCapacity: "{{ eks_nodegroup_cluster_size }}"
@@ -42,7 +43,3 @@
   vars: 
     interface_query: "network_interfaces[?description==''].network_interface_id"
   loop: "{{ ec2_info|json_query('instances[*]') }}"
-
-
-
-    
