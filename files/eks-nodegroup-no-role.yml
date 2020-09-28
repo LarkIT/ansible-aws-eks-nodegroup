@@ -52,7 +52,7 @@ Resources:
       NodegroupName: !Ref NodeGroupName
       ClusterName: !Ref ClusterName
       NodeRole: !Ref NodeGroupRoleArn
-      LaunchTemplate: !Ref LT
+      LaunchTemplate: ${LT}
       ScalingConfig:
         MinSize: 2
         DesiredSize: !Ref NodeGroupDesiredCapacity
