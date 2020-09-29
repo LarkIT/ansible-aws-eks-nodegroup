@@ -36,6 +36,7 @@ Resources:
   LT:
     Type: AWS::EC2::LaunchTemplate
     Properties:
+      LaunchTemplateName: !Join [ " ", [!Ref ClusterName, "launch template"]]
       LaunchTemplateData:
         BlockDeviceMappings:
         -
@@ -46,13 +47,27 @@ Resources:
             KmsKeyId: !Ref EBSKeyName
             VolumeType: gp2
         InstanceType: !Ref NodeInstanceType
+      UserData:
+        'Fn::Base64':
+           !Sub |
+           MIME-Version: 1.0
+           Content-Type: multipart/mixed; boundary="==DATABOUNDARY=="
+           --==DATABOUNDARY==
+           Content-Type: text/x-shellscript; charset="us-ascii"
+
+           #!/bin/bash
+           mkdir -p /opt/certs
+           openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout /opt/certs/worker.key -out /opt/certs/worker.crt -subj "/CN=$(hostname -f)/O=acn"
+           --==DATABOUNDARY--\
   NodeGroup:
     Type: 'AWS::EKS::Nodegroup'
     Properties:
       NodegroupName: !Ref NodeGroupName
       ClusterName: !Ref ClusterName
       NodeRole: !Ref NodeGroupRoleArn
-      LaunchTemplate: ${LT}
+      LaunchTemplate:
+        LaunchTemplateId:
+          Ref: LT
       ScalingConfig:
         MinSize: 2
         DesiredSize: !Ref NodeGroupDesiredCapacity
