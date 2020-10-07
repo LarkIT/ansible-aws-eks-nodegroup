@@ -8,10 +8,6 @@ Parameters:
     Type: String
     Description: The EKS cluster name.
 
-  EBSKeyName:
-    Type: String
-    Description: The KMS key to encrypt the node group worker EBS root volume
-
   NodeGroupName:
     Type: String
     Description: Unique identifier for the Node Group.
@@ -36,7 +32,7 @@ Resources:
   LT:
     Type: AWS::EC2::LaunchTemplate
     Properties:
-      LaunchTemplateName: !Join [ " ", [!Ref ClusterName, "launch template"]]
+      LaunchTemplateName: !Join [ "_", [!Ref ClusterName, "launch_template"]]
       LaunchTemplateData:
         BlockDeviceMappings:
         -
@@ -44,21 +40,21 @@ Resources:
           Ebs:
             DeleteOnTermination: true
             Encrypted: true
-            KmsKeyId: !Ref EBSKeyName
             VolumeType: gp2
         InstanceType: !Ref NodeInstanceType
-      UserData:
-        'Fn::Base64':
-           !Sub |
-           MIME-Version: 1.0
-           Content-Type: multipart/mixed; boundary="==DATABOUNDARY=="
-           --==DATABOUNDARY==
-           Content-Type: text/x-shellscript; charset="us-ascii"
+        UserData:
+          "Fn::Base64": |
+             Content-Type: multipart/mixed; boundary="==DATABOUNDARY=="
+             MIME-Version: 1.0
 
-           #!/bin/bash
-           mkdir -p /opt/certs
-           openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout /opt/certs/worker.key -out /opt/certs/worker.crt -subj "/CN=$(hostname -f)/O=acn"
-           --==DATABOUNDARY--\
+             --==DATABOUNDARY==
+             Content-Type: text/x-shellscript; charset="us-ascii"
+
+             #!/bin/bash
+             mkdir -p /opt/certs
+             openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout /opt/certs/worker.key -out /opt/certs/worker.crt -subj "/CN=$(hostname -f)/O=acn"
+
+             --==DATABOUNDARY==--
   NodeGroup:
     Type: 'AWS::EKS::Nodegroup'
     Properties:
@@ -66,7 +62,7 @@ Resources:
       ClusterName: !Ref ClusterName
       NodeRole: !Ref NodeGroupRoleArn
       LaunchTemplate:
-        LaunchTemplateId:
+        Id:
           Ref: LT
       ScalingConfig:
         MinSize: 2
